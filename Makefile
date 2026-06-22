@@ -194,7 +194,7 @@ publish: ## Build and push :latest images to Docker Hub (must be logged in)
 version: ## Show current version string
 	@echo $(VERSION)
 
-release: ## Bump patch version, tag it, and show the new version
+release: ## Bump patch version, commit, tag, and push
 	@set -e; \
 	BASE=$$(cat VERSION | tr -d '[:space:]'); \
 	MAJOR=$$(echo $$BASE | cut -d. -f1); \
@@ -202,9 +202,15 @@ release: ## Bump patch version, tag it, and show the new version
 	PATCH=$$(echo $$BASE | cut -d. -f3); \
 	NEW_PATCH=$$((PATCH + 1)); \
 	NEW_BASE="$$MAJOR.$$MINOR.$$NEW_PATCH"; \
-	NEW_VERSION="$$NEW_BASE-$(GIT_HASH)"; \
 	echo "$$NEW_BASE" > VERSION; \
-	echo "Bumped: $$BASE → $$NEW_BASE ($$NEW_VERSION)"
+	git add VERSION; \
+	git commit -m "chore: release v$$NEW_BASE"; \
+	git tag -a "v$$NEW_BASE" -m "Release v$$NEW_BASE"; \
+	git push origin HEAD; \
+	git push origin "v$$NEW_BASE"; \
+	echo ""; \
+	echo "  Released: v$$NEW_BASE"; \
+	echo "  Tag pushed: v$$NEW_BASE"
 
 # ─── Proto ───────────────────────────────────────────────────────────────────
 proto: ## Regenerate Go code from proto files (requires buf)
