@@ -1,0 +1,10 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # RadioListTile.groupValue/onChanged and SwitchListTile.activeColor are
+    # deprecated in Flutter 3.32+ in favor of RadioGroup / activeThumbColor.
+    # Suppressed until we migrate; these are info-level, not errors.
+    deprecated_member_use: ignore
+    # Missing const on constructors — minor perf hint, not correctness.
+    prefer_const_constructors: ignore

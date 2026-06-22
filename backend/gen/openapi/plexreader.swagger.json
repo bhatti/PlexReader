@@ -1,0 +1,1460 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "PlexReader API",
+    "description": "Self-hosted RSS reader API — Folder management endpoints.",
+    "version": "1.0"
+  },
+  "tags": [
+    {
+      "name": "FolderService"
+    },
+    {
+      "name": "ArticleService"
+    },
+    {
+      "name": "FeedService"
+    },
+    {
+      "name": "PreferencesService"
+    }
+  ],
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/articles": {
+      "get": {
+        "summary": "List articles",
+        "description": "Returns articles filtered by feed, folder, read state, or full-text query. Default shows unread articles newest first.",
+        "operationId": "ArticleService_ListArticles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListArticlesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "feed_id",
+            "description": "feed_id filters to a specific feed. Mutually exclusive with folder_id.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "folder_id",
+            "description": "folder_id filters to all feeds in a folder. Mutually exclusive with feed_id.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "unread_only",
+            "description": "unread_only, when true, returns only unread articles (default behaviour).",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "starred_only",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "saved_for_later_only",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "today_only",
+            "description": "today_only restricts to articles published in the last 24 hours.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "query",
+            "description": "query triggers full-text search across title, content, and summary.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "SORT_ORDER_UNSPECIFIED",
+              "SORT_ORDER_NEWEST_FIRST",
+              "SORT_ORDER_OLDEST_FIRST"
+            ],
+            "default": "SORT_ORDER_UNSPECIFIED"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "read_only",
+            "description": "read_only returns only articles individually opened by the user (read_at IS NOT NULL).\nUsed by the Recently Read screen. Does not include articles bulk-marked via MarkAllRead.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Articles"
+        ]
+      }
+    },
+    "/v1/articles/{id}": {
+      "get": {
+        "summary": "Get an article",
+        "operationId": "ArticleService_GetArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Article"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the article to retrieve.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Articles"
+        ]
+      }
+    },
+    "/v1/articles/{id}:markRead": {
+      "post": {
+        "summary": "Mark article as read",
+        "operationId": "ArticleService_MarkAsRead",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Article"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the article to mark as read.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ArticleServiceMarkAsReadBody"
+            }
+          }
+        ],
+        "tags": [
+          "Articles"
+        ]
+      }
+    },
+    "/v1/articles/{id}:markUnread": {
+      "post": {
+        "summary": "Mark article as unread",
+        "operationId": "ArticleService_MarkAsUnread",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Article"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the article to mark as unread.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ArticleServiceMarkAsUnreadBody"
+            }
+          }
+        ],
+        "tags": [
+          "Articles"
+        ]
+      }
+    },
+    "/v1/articles/{id}:save": {
+      "post": {
+        "summary": "Save article for later",
+        "operationId": "ArticleService_SaveForLater",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Article"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the article to save or unsave.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ArticleServiceSaveForLaterBody"
+            }
+          }
+        ],
+        "tags": [
+          "Articles"
+        ]
+      }
+    },
+    "/v1/articles/{id}:star": {
+      "post": {
+        "summary": "Star or unstar an article",
+        "operationId": "ArticleService_StarArticle",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Article"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the article to star or unstar.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ArticleServiceStarArticleBody"
+            }
+          }
+        ],
+        "tags": [
+          "Articles"
+        ]
+      }
+    },
+    "/v1/articles:markAllRead": {
+      "post": {
+        "summary": "Bulk mark articles as read",
+        "description": "Mark articles read by: specific feed, folder, explicit ID list, or all unread.",
+        "operationId": "ArticleService_MarkAllAsRead",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MarkAllAsReadResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1MarkAllAsReadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Articles"
+        ]
+      }
+    },
+    "/v1/feeds": {
+      "get": {
+        "summary": "List feeds",
+        "operationId": "FeedService_ListFeeds",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListFeedsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "folder_id",
+            "description": "folder_id filters feeds by folder. Empty returns all feeds.",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "page_token",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Feeds"
+        ]
+      },
+      "post": {
+        "summary": "Subscribe to a feed",
+        "operationId": "FeedService_CreateFeed",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Feed"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "feed",
+            "description": "feed to create. feed.xml_url is required.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Feed"
+            }
+          }
+        ],
+        "tags": [
+          "Feeds"
+        ]
+      }
+    },
+    "/v1/feeds/{feed.id}": {
+      "patch": {
+        "summary": "Update a feed",
+        "operationId": "FeedService_UpdateFeed",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Feed"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "feed.id",
+            "description": "Unique feed identifier (ULID). Output only on create.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "feed",
+            "description": "feed with updated fields. feed.id must be set.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "description": "Human-readable feed title. Auto-populated from the feed if omitted."
+                },
+                "xml_url": {
+                  "type": "string",
+                  "description": "xml_url is the RSS/Atom feed URL. Required."
+                },
+                "html_url": {
+                  "type": "string",
+                  "description": "html_url is the feed's website homepage."
+                },
+                "folder_id": {
+                  "type": "string",
+                  "description": "folder_id is empty if the feed is uncategorized."
+                },
+                "description": {
+                  "type": "string"
+                },
+                "icon_url": {
+                  "type": "string"
+                },
+                "refresh_interval_seconds": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "refresh_interval_seconds overrides the global refresh interval. Minimum 60."
+                },
+                "last_fetched_time": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "last_fetched_time is the last successful fetch time. Output only.",
+                  "readOnly": true
+                },
+                "unread_count": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "unread_count is the number of unread articles. Output only.",
+                  "readOnly": true
+                },
+                "last_error": {
+                  "type": "string",
+                  "description": "last_error is populated when the last fetch failed. Output only.",
+                  "readOnly": true
+                },
+                "error_count": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "error_count is the number of consecutive fetch failures. Output only.",
+                  "readOnly": true
+                },
+                "create_time": {
+                  "type": "string",
+                  "format": "date-time",
+                  "readOnly": true
+                },
+                "update_time": {
+                  "type": "string",
+                  "format": "date-time",
+                  "readOnly": true
+                }
+              },
+              "title": "feed with updated fields. feed.id must be set.",
+              "required": [
+                "xml_url"
+              ]
+            }
+          }
+        ],
+        "tags": [
+          "Feeds"
+        ]
+      }
+    },
+    "/v1/feeds/{id}": {
+      "get": {
+        "summary": "Get a feed",
+        "operationId": "FeedService_GetFeed",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Feed"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the feed to retrieve.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Feeds"
+        ]
+      },
+      "delete": {
+        "summary": "Unsubscribe from a feed",
+        "operationId": "FeedService_DeleteFeed",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the feed to delete. All associated articles are also deleted.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Feeds"
+        ]
+      }
+    },
+    "/v1/feeds/{id}:refresh": {
+      "post": {
+        "summary": "Manually refresh a feed",
+        "operationId": "FeedService_RefreshFeed",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Feed"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the feed to refresh immediately.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/FeedServiceRefreshFeedBody"
+            }
+          }
+        ],
+        "tags": [
+          "Feeds"
+        ]
+      }
+    },
+    "/v1/feeds:export": {
+      "get": {
+        "summary": "Export feeds as OPML",
+        "operationId": "FeedService_ExportOPML",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ExportOPMLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Feeds"
+        ]
+      }
+    },
+    "/v1/feeds:import": {
+      "post": {
+        "summary": "Import feeds from OPML",
+        "operationId": "FeedService_ImportOPML",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ImportOPMLResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ImportOPMLRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Feeds"
+        ]
+      }
+    },
+    "/v1/folders": {
+      "get": {
+        "summary": "List all folders",
+        "operationId": "FolderService_ListFolders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListFoldersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Folders"
+        ]
+      },
+      "post": {
+        "summary": "Create a folder",
+        "operationId": "FolderService_CreateFolder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Folder"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "folder",
+            "description": "folder to create.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1Folder"
+            }
+          }
+        ],
+        "tags": [
+          "Folders"
+        ]
+      }
+    },
+    "/v1/folders/{folder.id}": {
+      "patch": {
+        "summary": "Update a folder",
+        "operationId": "FolderService_UpdateFolder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Folder"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "folder.id",
+            "description": "Unique folder identifier (ULID). Output only on create.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "folder",
+            "description": "folder with updated fields. folder.id must be set.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Human-readable folder name. Required."
+                },
+                "parent_id": {
+                  "type": "string",
+                  "description": "parent_id is empty for root-level folders. Reserved for nested folders."
+                },
+                "position": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "position controls sidebar display order (ascending)."
+                },
+                "unread_count": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "unread_count is the total unread articles across all feeds in this folder. Output only.",
+                  "readOnly": true
+                },
+                "create_time": {
+                  "type": "string",
+                  "format": "date-time",
+                  "readOnly": true
+                },
+                "update_time": {
+                  "type": "string",
+                  "format": "date-time",
+                  "readOnly": true
+                }
+              },
+              "title": "folder with updated fields. folder.id must be set.",
+              "required": [
+                "name"
+              ]
+            }
+          }
+        ],
+        "tags": [
+          "Folders"
+        ]
+      }
+    },
+    "/v1/folders/{id}": {
+      "get": {
+        "summary": "Get a folder",
+        "operationId": "FolderService_GetFolder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1Folder"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the folder to retrieve.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Folders"
+        ]
+      },
+      "delete": {
+        "summary": "Delete a folder",
+        "operationId": "FolderService_DeleteFolder",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "id of the folder to delete. Feeds in the folder become uncategorized.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Folders"
+        ]
+      }
+    },
+    "/v1/folders:reorder": {
+      "post": {
+        "summary": "Reorder folders",
+        "operationId": "FolderService_ReorderFolders",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ReorderFoldersResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ReorderFoldersRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Folders"
+        ]
+      }
+    },
+    "/v1/preferences": {
+      "get": {
+        "summary": "Get preferences",
+        "operationId": "PreferencesService_GetPreferences",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UserPreferences"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Preferences"
+        ]
+      },
+      "patch": {
+        "summary": "Update preferences",
+        "operationId": "PreferencesService_UpdatePreferences",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1UserPreferences"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "preferences",
+            "description": "preferences with updated fields.",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1UserPreferences"
+            }
+          }
+        ],
+        "tags": [
+          "Preferences"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "ArticleServiceMarkAsReadBody": {
+      "type": "object"
+    },
+    "ArticleServiceMarkAsUnreadBody": {
+      "type": "object"
+    },
+    "ArticleServiceSaveForLaterBody": {
+      "type": "object",
+      "properties": {
+        "saved": {
+          "type": "boolean",
+          "description": "saved=true to save for later, false to remove."
+        }
+      }
+    },
+    "ArticleServiceStarArticleBody": {
+      "type": "object",
+      "properties": {
+        "starred": {
+          "type": "boolean",
+          "description": "starred=true to star, false to unstar."
+        }
+      }
+    },
+    "FeedServiceRefreshFeedBody": {
+      "type": "object"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1Article": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique article identifier (ULID). Output only.",
+          "readOnly": true
+        },
+        "feed_id": {
+          "type": "string",
+          "description": "feed_id is the parent feed. Output only.",
+          "readOnly": true
+        },
+        "title": {
+          "type": "string"
+        },
+        "link": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string",
+          "description": "content is the full HTML body of the article."
+        },
+        "summary": {
+          "type": "string",
+          "description": "summary is a plain-text excerpt (~300 chars) for list views."
+        },
+        "author": {
+          "type": "string"
+        },
+        "published_time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "guid": {
+          "type": "string",
+          "description": "guid is the feed-provided unique identifier used for deduplication.",
+          "readOnly": true
+        },
+        "thumbnail_url": {
+          "type": "string"
+        },
+        "is_read": {
+          "type": "boolean"
+        },
+        "is_starred": {
+          "type": "boolean"
+        },
+        "is_saved_for_later": {
+          "type": "boolean"
+        },
+        "read_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "read_at is set when is_read transitions to true. Output only.",
+          "readOnly": true
+        },
+        "create_time": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        }
+      },
+      "description": "Article represents a single item fetched from an RSS/Atom feed."
+    },
+    "v1ExportOPMLResponse": {
+      "type": "object",
+      "properties": {
+        "opml_content": {
+          "type": "string",
+          "format": "byte",
+          "description": "opml_content is the OPML 1.0 XML export bytes."
+        }
+      }
+    },
+    "v1Feed": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique feed identifier (ULID). Output only on create.",
+          "readOnly": true
+        },
+        "title": {
+          "type": "string",
+          "description": "Human-readable feed title. Auto-populated from the feed if omitted."
+        },
+        "xml_url": {
+          "type": "string",
+          "description": "xml_url is the RSS/Atom feed URL. Required."
+        },
+        "html_url": {
+          "type": "string",
+          "description": "html_url is the feed's website homepage."
+        },
+        "folder_id": {
+          "type": "string",
+          "description": "folder_id is empty if the feed is uncategorized."
+        },
+        "description": {
+          "type": "string"
+        },
+        "icon_url": {
+          "type": "string"
+        },
+        "refresh_interval_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "refresh_interval_seconds overrides the global refresh interval. Minimum 60."
+        },
+        "last_fetched_time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "last_fetched_time is the last successful fetch time. Output only.",
+          "readOnly": true
+        },
+        "unread_count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "unread_count is the number of unread articles. Output only.",
+          "readOnly": true
+        },
+        "last_error": {
+          "type": "string",
+          "description": "last_error is populated when the last fetch failed. Output only.",
+          "readOnly": true
+        },
+        "error_count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "error_count is the number of consecutive fetch failures. Output only.",
+          "readOnly": true
+        },
+        "create_time": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "update_time": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        }
+      },
+      "description": "Feed represents a subscribed RSS/Atom feed source.",
+      "required": [
+        "xml_url"
+      ]
+    },
+    "v1Folder": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique folder identifier (ULID). Output only on create.",
+          "readOnly": true
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable folder name. Required."
+        },
+        "parent_id": {
+          "type": "string",
+          "description": "parent_id is empty for root-level folders. Reserved for nested folders."
+        },
+        "position": {
+          "type": "integer",
+          "format": "int32",
+          "description": "position controls sidebar display order (ascending)."
+        },
+        "unread_count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "unread_count is the total unread articles across all feeds in this folder. Output only.",
+          "readOnly": true
+        },
+        "create_time": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        },
+        "update_time": {
+          "type": "string",
+          "format": "date-time",
+          "readOnly": true
+        }
+      },
+      "description": "Folder organizes feeds into named groups.",
+      "required": [
+        "name"
+      ]
+    },
+    "v1ImportOPMLRequest": {
+      "type": "object",
+      "properties": {
+        "opml_content": {
+          "type": "string",
+          "format": "byte",
+          "description": "opml_content is the raw OPML XML bytes (UTF-8 encoded)."
+        }
+      },
+      "required": [
+        "opml_content"
+      ]
+    },
+    "v1ImportOPMLResponse": {
+      "type": "object",
+      "properties": {
+        "feeds_created": {
+          "type": "integer",
+          "format": "int32",
+          "description": "feeds_created is the number of new feeds added."
+        },
+        "folders_created": {
+          "type": "integer",
+          "format": "int32",
+          "description": "folders_created is the number of new folders added."
+        },
+        "feeds_skipped": {
+          "type": "integer",
+          "format": "int32",
+          "description": "feeds_skipped is the number of feeds that already existed."
+        },
+        "errors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "errors lists any non-fatal errors encountered during import."
+        }
+      }
+    },
+    "v1ListArticlesResponse": {
+      "type": "object",
+      "properties": {
+        "articles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Article"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        },
+        "total_count": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "v1ListFeedsResponse": {
+      "type": "object",
+      "properties": {
+        "feeds": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Feed"
+          }
+        },
+        "next_page_token": {
+          "type": "string"
+        }
+      }
+    },
+    "v1ListFoldersResponse": {
+      "type": "object",
+      "properties": {
+        "folders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Folder"
+          }
+        }
+      }
+    },
+    "v1MarkAllAsReadRequest": {
+      "type": "object",
+      "properties": {
+        "feed_id": {
+          "type": "string",
+          "description": "feed_id marks all unread articles in a specific feed."
+        },
+        "folder_id": {
+          "type": "string",
+          "description": "folder_id marks all unread articles in a folder."
+        },
+        "all": {
+          "type": "boolean",
+          "description": "all marks every unread article across all feeds."
+        },
+        "article_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "article_ids marks a specific selection. Takes priority over scope if non-empty."
+        },
+        "before_time": {
+          "type": "string",
+          "format": "date-time",
+          "description": "before_time only marks articles published before this time (optional filter)."
+        }
+      }
+    },
+    "v1MarkAllAsReadResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "format": "int32",
+          "description": "count is the number of articles marked as read."
+        }
+      }
+    },
+    "v1ReorderFoldersRequest": {
+      "type": "object",
+      "properties": {
+        "folder_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "folder_ids in the desired display order (ascending position)."
+        }
+      },
+      "required": [
+        "folder_ids"
+      ]
+    },
+    "v1ReorderFoldersResponse": {
+      "type": "object",
+      "properties": {
+        "folders": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/v1Folder"
+          }
+        }
+      }
+    },
+    "v1SortOrder": {
+      "type": "string",
+      "enum": [
+        "SORT_ORDER_UNSPECIFIED",
+        "SORT_ORDER_NEWEST_FIRST",
+        "SORT_ORDER_OLDEST_FIRST"
+      ],
+      "default": "SORT_ORDER_UNSPECIFIED",
+      "description": "SortOrder controls article sort direction."
+    },
+    "v1StartPage": {
+      "type": "string",
+      "enum": [
+        "START_PAGE_UNSPECIFIED",
+        "START_PAGE_TODAY",
+        "START_PAGE_FIRST_FOLDER",
+        "START_PAGE_ALL"
+      ],
+      "default": "START_PAGE_UNSPECIFIED",
+      "description": "StartPage controls which page loads on app start."
+    },
+    "v1UserPreferences": {
+      "type": "object",
+      "properties": {
+        "start_page": {
+          "$ref": "#/definitions/v1StartPage",
+          "description": "start_page controls which view loads on app start."
+        },
+        "default_view": {
+          "$ref": "#/definitions/v1ViewMode",
+          "description": "default_view controls the article list presentation."
+        },
+        "default_sort": {
+          "$ref": "#/definitions/v1SortOrder",
+          "description": "default_sort controls article sort order."
+        },
+        "hide_read_articles": {
+          "type": "boolean",
+          "description": "hide_read_articles, when true (default), hides already-read articles from feed lists."
+        },
+        "global_refresh_interval_seconds": {
+          "type": "integer",
+          "format": "int32",
+          "description": "global_refresh_interval_seconds applies to feeds without a custom interval. Min 60."
+        },
+        "retention_days": {
+          "type": "integer",
+          "format": "int32",
+          "description": "retention_days: read articles older than this are auto-deleted. 0 = keep forever."
+        },
+        "theme": {
+          "type": "string",
+          "description": "theme is reserved for future theme support. Default: \"dark\"."
+        }
+      },
+      "description": "UserPreferences holds global reader settings (single user, persisted)."
+    },
+    "v1ViewMode": {
+      "type": "string",
+      "enum": [
+        "VIEW_MODE_UNSPECIFIED",
+        "VIEW_MODE_TITLE_ONLY",
+        "VIEW_MODE_MAGAZINE",
+        "VIEW_MODE_CARDS",
+        "VIEW_MODE_ARTICLE"
+      ],
+      "default": "VIEW_MODE_UNSPECIFIED",
+      "description": "ViewMode controls article list presentation."
+    }
+  }
+}

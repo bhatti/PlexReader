@@ -1,0 +1,233 @@
+syntax = "proto3";
+
+package plexreader.v1;
+
+option go_package = "github.com/plexreader/plexreader/backend/gen/plexreader/v1;plexreaderv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "plexreader/v1/common.proto";
+
+// Article represents a single item fetched from an RSS/Atom feed.
+message Article {
+  // Unique article identifier (ULID). Output only.
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // feed_id is the parent feed. Output only.
+  string feed_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  string title = 3;
+  string link = 4;
+
+  // content is the full HTML body of the article.
+  string content = 5;
+
+  // summary is a plain-text excerpt (~300 chars) for list views.
+  string summary = 6;
+
+  string author = 7;
+  google.protobuf.Timestamp published_time = 8;
+
+  // guid is the feed-provided unique identifier used for deduplication.
+  string guid = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  string thumbnail_url = 10;
+  bool is_read = 11;
+  bool is_starred = 12;
+  bool is_saved_for_later = 13;
+
+  // read_at is set when is_read transitions to true. Output only.
+  google.protobuf.Timestamp read_at = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  google.protobuf.Timestamp create_time = 15 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message GetArticleRequest {
+  // id of the article to retrieve.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message ListArticlesRequest {
+  // feed_id filters to a specific feed. Mutually exclusive with folder_id.
+  string feed_id = 1;
+  // folder_id filters to all feeds in a folder. Mutually exclusive with feed_id.
+  string folder_id = 2;
+
+  // unread_only, when true, returns only unread articles (default behaviour).
+  bool unread_only = 3;
+  bool starred_only = 4;
+  bool saved_for_later_only = 5;
+
+  // today_only restricts to articles published in the last 24 hours.
+  bool today_only = 6;
+
+  // query triggers full-text search across title, content, and summary.
+  string query = 7 [(buf.validate.field).string.max_len = 500];
+
+  SortOrder sort_order = 8;
+
+  int32 page_size = 9 [(buf.validate.field).int32 = {gte: 0, lte: 200}];
+  string page_token = 10;
+
+  // read_only returns only articles individually opened by the user (read_at IS NOT NULL).
+  // Used by the Recently Read screen. Does not include articles bulk-marked via MarkAllRead.
+  bool read_only = 11;
+}
+
+message ListArticlesResponse {
+  repeated Article articles = 1;
+  string next_page_token = 2;
+  int32 total_count = 3;
+}
+
+message MarkAsReadRequest {
+  // id of the article to mark as read.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message MarkAsUnreadRequest {
+  // id of the article to mark as unread.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message MarkAllAsReadRequest {
+  // scope determines which articles to mark. Set exactly one, or use article_ids.
+  oneof scope {
+    // feed_id marks all unread articles in a specific feed.
+    string feed_id = 1;
+    // folder_id marks all unread articles in a folder.
+    string folder_id = 2;
+    // all marks every unread article across all feeds.
+    bool all = 3;
+  }
+
+  // article_ids marks a specific selection. Takes priority over scope if non-empty.
+  repeated string article_ids = 4;
+
+  // before_time only marks articles published before this time (optional filter).
+  google.protobuf.Timestamp before_time = 5;
+}
+
+message MarkAllAsReadResponse {
+  // count is the number of articles marked as read.
+  int32 count = 1;
+}
+
+message StarArticleRequest {
+  // id of the article to star or unstar.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  // starred=true to star, false to unstar.
+  bool starred = 2;
+}
+
+message SaveForLaterRequest {
+  // id of the article to save or unsave.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+  // saved=true to save for later, false to remove.
+  bool saved = 2;
+}
+
+// ArticleService provides access to fetched feed articles.
+service ArticleService {
+  // GetArticle retrieves a single article by ID.
+  rpc GetArticle(GetArticleRequest) returns (Article) {
+    option (google.api.http) = {
+      get: "/v1/articles/{id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get an article"
+      tags: ["Articles"]
+    };
+  }
+
+  // ListArticles lists articles with optional filtering, sorting, and pagination.
+  rpc ListArticles(ListArticlesRequest) returns (ListArticlesResponse) {
+    option (google.api.http) = {
+      get: "/v1/articles"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List articles"
+      description: "Returns articles filtered by feed, folder, read state, or full-text query. Default shows unread articles newest first."
+      tags: ["Articles"]
+    };
+  }
+
+  // MarkAsRead marks an article as read.
+  rpc MarkAsRead(MarkAsReadRequest) returns (Article) {
+    option (google.api.http) = {
+      post: "/v1/articles/{id}:markRead"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Mark article as read"
+      tags: ["Articles"]
+    };
+  }
+
+  // MarkAsUnread marks an article as unread.
+  rpc MarkAsUnread(MarkAsUnreadRequest) returns (Article) {
+    option (google.api.http) = {
+      post: "/v1/articles/{id}:markUnread"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Mark article as unread"
+      tags: ["Articles"]
+    };
+  }
+
+  // MarkAllAsRead bulk-marks articles as read by feed, folder, ID list, or all.
+  rpc MarkAllAsRead(MarkAllAsReadRequest) returns (MarkAllAsReadResponse) {
+    option (google.api.http) = {
+      post: "/v1/articles:markAllRead"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Bulk mark articles as read"
+      description: "Mark articles read by: specific feed, folder, explicit ID list, or all unread."
+      tags: ["Articles"]
+    };
+  }
+
+  // StarArticle stars or unstars an article.
+  rpc StarArticle(StarArticleRequest) returns (Article) {
+    option (google.api.http) = {
+      post: "/v1/articles/{id}:star"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Star or unstar an article"
+      tags: ["Articles"]
+    };
+  }
+
+  // SaveForLater saves or unsaves an article for later reading.
+  rpc SaveForLater(SaveForLaterRequest) returns (Article) {
+    option (google.api.http) = {
+      post: "/v1/articles/{id}:save"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Save article for later"
+      tags: ["Articles"]
+    };
+  }
+}

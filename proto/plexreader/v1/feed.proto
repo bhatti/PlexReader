@@ -1,0 +1,232 @@
+syntax = "proto3";
+
+package plexreader.v1;
+
+option go_package = "github.com/plexreader/plexreader/backend/gen/plexreader/v1;plexreaderv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+// Feed represents a subscribed RSS/Atom feed source.
+message Feed {
+  // Unique feed identifier (ULID). Output only on create.
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Human-readable feed title. Auto-populated from the feed if omitted.
+  string title = 2;
+
+  // xml_url is the RSS/Atom feed URL. Required.
+  string xml_url = 3 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {min_len: 1, uri: true}
+  ];
+
+  // html_url is the feed's website homepage.
+  string html_url = 4;
+
+  // folder_id is empty if the feed is uncategorized.
+  string folder_id = 5;
+
+  string description = 6;
+  string icon_url = 7;
+
+  // refresh_interval_seconds overrides the global refresh interval. Minimum 60.
+  int32 refresh_interval_seconds = 8 [
+    (buf.validate.field).int32 = {gte: 60}
+  ];
+
+  // last_fetched_time is the last successful fetch time. Output only.
+  google.protobuf.Timestamp last_fetched_time = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // unread_count is the number of unread articles. Output only.
+  int32 unread_count = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // last_error is populated when the last fetch failed. Output only.
+  string last_error = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // error_count is the number of consecutive fetch failures. Output only.
+  int32 error_count = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  google.protobuf.Timestamp create_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message CreateFeedRequest {
+  // feed to create. feed.xml_url is required.
+  Feed feed = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+}
+
+message GetFeedRequest {
+  // id of the feed to retrieve.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message ListFeedsRequest {
+  // folder_id filters feeds by folder. Empty returns all feeds.
+  string folder_id = 1;
+  int32 page_size = 2 [(buf.validate.field).int32 = {gte: 0, lte: 200}];
+  string page_token = 3;
+}
+
+message ListFeedsResponse {
+  repeated Feed feeds = 1;
+  string next_page_token = 2;
+}
+
+message UpdateFeedRequest {
+  // feed with updated fields. feed.id must be set.
+  Feed feed = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+  // update_mask specifies which fields to update.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteFeedRequest {
+  // id of the feed to delete. All associated articles are also deleted.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message ImportOPMLRequest {
+  // opml_content is the raw OPML XML bytes (UTF-8 encoded).
+  bytes opml_content = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).bytes.min_len = 1
+  ];
+}
+
+message ImportOPMLResponse {
+  // feeds_created is the number of new feeds added.
+  int32 feeds_created = 1;
+  // folders_created is the number of new folders added.
+  int32 folders_created = 2;
+  // feeds_skipped is the number of feeds that already existed.
+  int32 feeds_skipped = 3;
+  // errors lists any non-fatal errors encountered during import.
+  repeated string errors = 4;
+}
+
+message ExportOPMLRequest {}
+
+message ExportOPMLResponse {
+  // opml_content is the OPML 1.0 XML export bytes.
+  bytes opml_content = 1;
+}
+
+message RefreshFeedRequest {
+  // id of the feed to refresh immediately.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+// FeedService manages RSS/Atom feed subscriptions and OPML import/export.
+service FeedService {
+  // CreateFeed subscribes to a new RSS/Atom feed.
+  rpc CreateFeed(CreateFeedRequest) returns (Feed) {
+    option (google.api.http) = {
+      post: "/v1/feeds"
+      body: "feed"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Subscribe to a feed"
+      tags: ["Feeds"]
+    };
+  }
+
+  // GetFeed retrieves a feed by ID.
+  rpc GetFeed(GetFeedRequest) returns (Feed) {
+    option (google.api.http) = {
+      get: "/v1/feeds/{id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get a feed"
+      tags: ["Feeds"]
+    };
+  }
+
+  // ListFeeds lists feeds, optionally filtered by folder.
+  rpc ListFeeds(ListFeedsRequest) returns (ListFeedsResponse) {
+    option (google.api.http) = {
+      get: "/v1/feeds"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List feeds"
+      tags: ["Feeds"]
+    };
+  }
+
+  // UpdateFeed updates a feed's metadata.
+  rpc UpdateFeed(UpdateFeedRequest) returns (Feed) {
+    option (google.api.http) = {
+      patch: "/v1/feeds/{feed.id}"
+      body: "feed"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Update a feed"
+      tags: ["Feeds"]
+    };
+  }
+
+  // DeleteFeed unsubscribes from a feed and deletes its articles.
+  rpc DeleteFeed(DeleteFeedRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/feeds/{id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Unsubscribe from a feed"
+      tags: ["Feeds"]
+    };
+  }
+
+  // ImportOPML imports feeds and folders from OPML data.
+  rpc ImportOPML(ImportOPMLRequest) returns (ImportOPMLResponse) {
+    option (google.api.http) = {
+      post: "/v1/feeds:import"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Import feeds from OPML"
+      tags: ["Feeds"]
+    };
+  }
+
+  // ExportOPML exports all feeds and folders as OPML 1.0.
+  rpc ExportOPML(ExportOPMLRequest) returns (ExportOPMLResponse) {
+    option (google.api.http) = {
+      get: "/v1/feeds:export"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Export feeds as OPML"
+      tags: ["Feeds"]
+    };
+  }
+
+  // RefreshFeed manually triggers an immediate feed refresh.
+  rpc RefreshFeed(RefreshFeedRequest) returns (Feed) {
+    option (google.api.http) = {
+      post: "/v1/feeds/{id}:refresh"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Manually refresh a feed"
+      tags: ["Feeds"]
+    };
+  }
+}

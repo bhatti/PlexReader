@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package plexreader.v1;
+
+option go_package = "github.com/plexreader/plexreader/backend/gen/plexreader/v1;plexreaderv1";
+
+// SortOrder controls article sort direction.
+enum SortOrder {
+  SORT_ORDER_UNSPECIFIED = 0;
+  SORT_ORDER_NEWEST_FIRST = 1;
+  SORT_ORDER_OLDEST_FIRST = 2;
+}
+
+// ViewMode controls article list presentation.
+enum ViewMode {
+  VIEW_MODE_UNSPECIFIED = 0;
+  VIEW_MODE_TITLE_ONLY = 1;
+  VIEW_MODE_MAGAZINE = 2;
+  VIEW_MODE_CARDS = 3;
+  VIEW_MODE_ARTICLE = 4;
+}
+
+// StartPage controls which page loads on app start.
+enum StartPage {
+  START_PAGE_UNSPECIFIED = 0;
+  START_PAGE_TODAY = 1;
+  START_PAGE_FIRST_FOLDER = 2;
+  START_PAGE_ALL = 3;
+}

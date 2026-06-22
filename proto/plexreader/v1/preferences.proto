@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+package plexreader.v1;
+
+option go_package = "github.com/plexreader/plexreader/backend/gen/plexreader/v1;plexreaderv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/field_mask.proto";
+import "buf/validate/validate.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "plexreader/v1/common.proto";
+
+// UserPreferences holds global reader settings (single user, persisted).
+message UserPreferences {
+  // start_page controls which view loads on app start.
+  StartPage start_page = 1;
+
+  // default_view controls the article list presentation.
+  ViewMode default_view = 2;
+
+  // default_sort controls article sort order.
+  SortOrder default_sort = 3;
+
+  // hide_read_articles, when true (default), hides already-read articles from feed lists.
+  bool hide_read_articles = 4;
+
+  // global_refresh_interval_seconds applies to feeds without a custom interval. Min 60.
+  int32 global_refresh_interval_seconds = 5 [
+    (buf.validate.field).int32 = {gte: 60}
+  ];
+
+  // retention_days: read articles older than this are auto-deleted. 0 = keep forever.
+  int32 retention_days = 6 [(buf.validate.field).int32.gte = 0];
+
+  // theme is reserved for future theme support. Default: "dark".
+  string theme = 7;
+}
+
+message GetPreferencesRequest {}
+
+message UpdatePreferencesRequest {
+  // preferences with updated fields.
+  UserPreferences preferences = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+  // update_mask specifies which fields to update. If empty, all fields are updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// PreferencesService manages global reader settings.
+service PreferencesService {
+  // GetPreferences returns the current user preferences.
+  rpc GetPreferences(GetPreferencesRequest) returns (UserPreferences) {
+    option (google.api.http) = {
+      get: "/v1/preferences"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get preferences"
+      tags: ["Preferences"]
+    };
+  }
+
+  // UpdatePreferences updates one or more preference fields.
+  rpc UpdatePreferences(UpdatePreferencesRequest) returns (UserPreferences) {
+    option (google.api.http) = {
+      patch: "/v1/preferences"
+      body: "preferences"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Update preferences"
+      tags: ["Preferences"]
+    };
+  }
+}

@@ -1,0 +1,173 @@
+syntax = "proto3";
+
+package plexreader.v1;
+
+option go_package = "github.com/plexreader/plexreader/backend/gen/plexreader/v1;plexreaderv1";
+
+import "google/api/annotations.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "buf/validate/validate.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "PlexReader API"
+    version: "1.0"
+    description: "Self-hosted RSS reader API — Folder management endpoints."
+  }
+  schemes: HTTP
+  schemes: HTTPS
+  consumes: "application/json"
+  produces: "application/json"
+};
+
+// Folder organizes feeds into named groups.
+message Folder {
+  // Unique folder identifier (ULID). Output only on create.
+  string id = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Human-readable folder name. Required.
+  string name = 2 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string = {min_len: 1, max_len: 255}
+  ];
+
+  // parent_id is empty for root-level folders. Reserved for nested folders.
+  string parent_id = 3;
+
+  // position controls sidebar display order (ascending).
+  int32 position = 4;
+
+  // unread_count is the total unread articles across all feeds in this folder. Output only.
+  int32 unread_count = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  google.protobuf.Timestamp create_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message CreateFolderRequest {
+  // folder to create.
+  Folder folder = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+}
+
+message GetFolderRequest {
+  // id of the folder to retrieve.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message ListFoldersRequest {}
+
+message ListFoldersResponse {
+  repeated Folder folders = 1;
+}
+
+message UpdateFolderRequest {
+  // folder with updated fields. folder.id must be set.
+  Folder folder = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).required = true
+  ];
+  // update_mask specifies which fields to update. If empty, all fields are updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+message DeleteFolderRequest {
+  // id of the folder to delete. Feeds in the folder become uncategorized.
+  string id = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).string.min_len = 1
+  ];
+}
+
+message ReorderFoldersRequest {
+  // folder_ids in the desired display order (ascending position).
+  repeated string folder_ids = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (buf.validate.field).repeated.min_items = 1
+  ];
+}
+
+message ReorderFoldersResponse {
+  repeated Folder folders = 1;
+}
+
+// FolderService manages feed folders.
+service FolderService {
+  // CreateFolder creates a new folder.
+  rpc CreateFolder(CreateFolderRequest) returns (Folder) {
+    option (google.api.http) = {
+      post: "/v1/folders"
+      body: "folder"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Create a folder"
+      tags: ["Folders"]
+    };
+  }
+
+  // GetFolder retrieves a folder by ID.
+  rpc GetFolder(GetFolderRequest) returns (Folder) {
+    option (google.api.http) = {
+      get: "/v1/folders/{id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Get a folder"
+      tags: ["Folders"]
+    };
+  }
+
+  // ListFolders lists all folders ordered by position.
+  rpc ListFolders(ListFoldersRequest) returns (ListFoldersResponse) {
+    option (google.api.http) = {
+      get: "/v1/folders"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "List all folders"
+      tags: ["Folders"]
+    };
+  }
+
+  // UpdateFolder updates a folder's name, parent, or position.
+  rpc UpdateFolder(UpdateFolderRequest) returns (Folder) {
+    option (google.api.http) = {
+      patch: "/v1/folders/{folder.id}"
+      body: "folder"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Update a folder"
+      tags: ["Folders"]
+    };
+  }
+
+  // DeleteFolder deletes a folder. Feeds become uncategorized.
+  rpc DeleteFolder(DeleteFolderRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/folders/{id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Delete a folder"
+      tags: ["Folders"]
+    };
+  }
+
+  // ReorderFolders sets the display order of folders by providing IDs in desired order.
+  rpc ReorderFolders(ReorderFoldersRequest) returns (ReorderFoldersResponse) {
+    option (google.api.http) = {
+      post: "/v1/folders:reorder"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Reorder folders"
+      tags: ["Folders"]
+    };
+  }
+}
