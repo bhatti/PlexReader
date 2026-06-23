@@ -1,8 +1,6 @@
 # PlexReader
 
-**Self-hosted RSS reader inspired by Feedly**
-
-[![License: LGPL-2.1](https://img.shields.io/badge/License-LGPL--2.1-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 [![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go)](https://go.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.44+-54C5F8?logo=flutter)](https://flutter.dev)
 
@@ -190,6 +188,4 @@ All configuration is via environment variables. See [docs/installation.md](docs/
 
 ## License
 
-PlexReader is released under the **GNU Lesser General Public License v2.1 or later**. See [LICENSE](LICENSE).
-
-*Not affiliated with Feedly, Inc.*
+PlexReader is released under the [GNU AGPLv3 License](./LICENSE.md).
