@@ -134,8 +134,8 @@ Set the output as `PLEXREADER_AUTH_TOKEN` in your `.env` file.
 Install the following tools before proceeding:
 
 ```bash
-# Go 1.23 or later (with CGO support)
-go version   # must print go1.23 or higher
+# Go 1.25 or later (with CGO support)
+go version   # must print go1.25 or higher
 
 # C compiler for CGO (SQLite FTS5 requires cgo)
 # macOS:  Xcode Command Line Tools
@@ -207,6 +207,24 @@ make ui-analyze
 # Full CI gate (backend tests + Flutter analysis)
 make test
 ```
+
+### Running in any browser (no Docker)
+
+`make dev-ui` opens Chrome because Flutter's hot-reload injector requires it. The compiled output is plain HTML/JS/CSS and works in any modern browser.
+
+```bash
+# 1. Build the Flutter web bundle
+make ui-build
+
+# 2. Serve the build output
+cd ui/build/web && python3 -m http.server 3001
+
+# 3. Open in any browser
+open http://localhost:3001       # macOS
+xdg-open http://localhost:3001  # Linux
+```
+
+The backend (`make dev-backend`) must be running on port 8080.
 
 ### Building production assets locally
 
@@ -334,3 +352,37 @@ server {
 ```
 
 The frontend nginx container proxies `/plexreader.v1.*` calls to `backend:8080` and serves the Flutter SPA for everything else. Point your reverse proxy at port 3000 only.
+
+---
+
+## Chrome Extension
+
+### Build
+
+```bash
+make chrome-ext
+# Copies ui/build/web/* into ui/chrome_extension/
+```
+
+### Load in Chrome
+
+1. Navigate to `chrome://extensions/`
+2. Enable **Developer mode** (toggle, top right)
+3. Click **Load unpacked**
+4. Select the `ui/chrome_extension/` directory
+
+The extension popup opens the full PlexReader UI. It also injects a content script that detects RSS/Atom feed links on any page.
+
+> The extension requires Chrome or Chromium. For other browsers, use the web app.
+
+### Pointing the extension at a remote server
+
+By default the extension connects to `http://localhost:8080`. To use a remote server, rebuild with the correct API URL:
+
+```bash
+cd ui && ~/flutter/bin/flutter build web \
+  --dart-define=API_BASE_URL=https://reader.example.com
+cp -r build/web/* chrome_extension/
+```
+
+Then reload the unpacked extension in `chrome://extensions/`.

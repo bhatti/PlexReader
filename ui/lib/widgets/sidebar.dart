@@ -189,6 +189,25 @@ class _ExpandedNav extends ConsumerWidget {
           currentLocation: location,
         ),
 
+        // ── Favorites section ─────────────────────────────────────────────
+        if (allFeeds.any((f) => f.isFavorite)) ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(12, 16, 12, 4),
+            child: Text(
+              'FAVORITES',
+              style: TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.8,
+              ),
+            ),
+          ),
+          ...allFeeds
+              .where((f) => f.isFavorite)
+              .map((feed) => _FeedTile(feed: feed, currentLocation: location)),
+        ],
+
         // ── Feeds section header ──────────────────────────────────────────
         const Padding(
           padding: EdgeInsets.fromLTRB(12, 16, 12, 4),
@@ -547,14 +566,21 @@ class _FeedTile extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          if (feed.hasError && !hovering)
-            Tooltip(
-              message: feed.lastError ?? 'Feed error',
-              child: const Padding(
+          if (!hovering) ...[
+            if (feed.hasError)
+              Tooltip(
+                message: feed.lastError ?? 'Feed error',
+                child: const Padding(
+                  padding: EdgeInsets.only(right: 2),
+                  child: Icon(Icons.error_outline, color: AppColors.error, size: 13),
+                ),
+              )
+            else if (feed.isFavorite)
+              const Padding(
                 padding: EdgeInsets.only(right: 2),
-                child: Icon(Icons.error_outline, color: AppColors.error, size: 13),
+                child: Icon(Icons.star, color: AppColors.star, size: 11),
               ),
-            ),
+          ],
           if (!hovering && feed.unreadCount > 0) _UnreadBadge(feed.unreadCount),
           Offstage(
             offstage: !hovering,
@@ -569,6 +595,11 @@ class _FeedTile extends ConsumerWidget {
                     ref.read(articleRefreshSignalProvider.notifier).state++;
                   } catch (_) {}
                 },
+              ),
+              _MenuItem(
+                icon: feed.isFavorite ? Icons.star : Icons.star_border,
+                label: feed.isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+                onTap: () => ref.read(feedProvider.notifier).toggleFavorite(feed),
               ),
               _MenuItem(
                 icon: Icons.refresh,
@@ -601,9 +632,11 @@ class _FeedTile extends ConsumerWidget {
   void _editFeed(WidgetRef ref) {
     final ctx = rootNavigatorKey.currentContext;
     if (ctx == null) return;
+    final notifier = ref.read(feedProvider.notifier);
+    final folders = ref.read(folderProvider).valueOrNull ?? [];
     showDialog(
       context: ctx,
-      builder: (_) => _EditFeedDialog(feed: feed, ref: ref),
+      builder: (_) => _EditFeedDialog(feed: feed, notifier: notifier, folders: folders),
     );
   }
 
@@ -886,8 +919,9 @@ class _DotsMenuState extends State<_DotsMenu> {
 
 class _EditFeedDialog extends StatefulWidget {
   final Feed feed;
-  final WidgetRef ref;
-  const _EditFeedDialog({required this.feed, required this.ref});
+  final FeedNotifier notifier;
+  final List<Folder> folders;
+  const _EditFeedDialog({required this.feed, required this.notifier, required this.folders});
 
   @override
   State<_EditFeedDialog> createState() => _EditFeedDialogState();
@@ -895,7 +929,8 @@ class _EditFeedDialog extends StatefulWidget {
 
 class _EditFeedDialogState extends State<_EditFeedDialog> {
   late final TextEditingController _title;
-  String? _folderId;
+  // Use a boxed string so we can represent "explicitly set to null" vs "not changed".
+  late String? _folderId;
 
   @override
   void initState() {
@@ -912,7 +947,6 @@ class _EditFeedDialogState extends State<_EditFeedDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final folders = widget.ref.read(folderProvider).valueOrNull ?? [];
     return AlertDialog(
       title: const Text('Edit Feed'),
       content: Column(
@@ -928,7 +962,7 @@ class _EditFeedDialogState extends State<_EditFeedDialog> {
             decoration: const InputDecoration(labelText: 'Folder'),
             items: [
               const DropdownMenuItem(value: null, child: Text('None')),
-              ...folders.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name))),
+              ...widget.folders.map((f) => DropdownMenuItem(value: f.id, child: Text(f.name))),
             ],
             onChanged: (v) => setState(() => _folderId = v),
           ),
@@ -939,9 +973,13 @@ class _EditFeedDialogState extends State<_EditFeedDialog> {
         ElevatedButton(
           onPressed: () {
             Navigator.of(context).pop();
-            widget.ref.read(feedProvider.notifier).updateFeed(
-                  widget.feed.copyWith(title: _title.text.trim(), folderId: _folderId),
-                );
+            // Use copyWith with explicit folderId so null (remove folder) is honoured.
+            widget.notifier.updateFeed(
+              widget.feed.copyWith(
+                title: _title.text.trim(),
+                folderId: _folderId,
+              ),
+            );
           },
           child: const Text('Save'),
         ),

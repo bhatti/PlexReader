@@ -42,6 +42,7 @@ func (s *FeedService) CreateFeed(ctx context.Context, req *connect.Request[pb.Cr
 		FolderID:               f.FolderId,
 		Description:            f.Description,
 		IconURL:                f.IconUrl,
+		IsFavorite:             f.IsFavorite,
 		RefreshIntervalSeconds: int(f.RefreshIntervalSeconds),
 	}
 	if stored.RefreshIntervalSeconds == 0 {
@@ -103,6 +104,7 @@ func (s *FeedService) UpdateFeed(ctx context.Context, req *connect.Request[pb.Up
 		"description":              f.Description,
 		"icon_url":                 f.IconUrl,
 		"refresh_interval_seconds": f.RefreshIntervalSeconds,
+		"is_favorite":              f.IsFavorite,
 	}
 	updated, err := s.feedStore.Update(ctx, f.Id, updates)
 	if err != nil {

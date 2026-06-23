@@ -6,6 +6,7 @@
 - [Importing Feeds from Feedly (OPML)](#importing-feeds-from-feedly-opml)
 - [Adding Individual Feeds](#adding-individual-feeds)
 - [Organising Feeds into Folders](#organising-feeds-into-folders)
+- [Favorites](#favorites)
 - [Reading Articles](#reading-articles)
 - [View Modes](#view-modes)
 - [Keyboard Shortcuts](#keyboard-shortcuts)
@@ -83,12 +84,34 @@ Folders are optional but useful when you follow many feeds.
 
 ---
 
+## Favorites
+
+Favorites let you pin important feeds at the top of the sidebar in a dedicated **FAVORITES** section, separate from the regular folder/feed tree — the same pattern Feedly uses.
+
+### Add a feed to Favorites
+
+Two ways:
+1. **From the toolbar**: Open the feed, then click the ☆ star icon next to the feed title in the top toolbar. The star fills amber (★) when active.
+2. **From the sidebar**: Right-click (or hover → ⋯ menu) on any feed → **Add to Favorites**.
+
+### Remove from Favorites
+
+Click the filled ★ star in the toolbar, or hover the feed in the sidebar → ⋯ menu → **Remove from Favorites**.
+
+The feed remains in its original folder — Favorites is a view, not a second location.
+
+---
+
 ## Reading Articles
 
 Click any article in the article list to open it in the reading pane on the right. The full article body is displayed using the stored HTML content fetched from the feed.
 
 - **Open in browser**: Click the article title or the external-link icon (↗) to open the original URL in a new tab.
-- **Mark as read**: Articles are marked as read automatically when you open them. To toggle the read state manually, click the circle icon on the article card, or press `m`.
+- **Mark as read**: Selecting an article in the list opens it in the reading pane but does **not** automatically mark it as read. Mark articles read explicitly using one of these methods:
+  - Press `m` while the article is focused
+  - Click the circle/dot icon on the article card
+  - Click the **✓ N** (Mark all) button in the feed toolbar to mark everything in the current view as read
+  - Press `Shift+A` to mark all as read
 - **Mark all as read**: Click **Mark all read** in the feed toolbar, or press `Shift+A`.
 - **Scroll through articles**: Use `j` (next) and `k` (previous) to move through the article list without touching the mouse.
 
@@ -223,28 +246,28 @@ The scheduler respects per-feed overrides on the next cycle.
 
 ## Chrome Extension
 
-The PlexReader Chrome extension adds a button to the browser toolbar that lets you subscribe to the current page's RSS feed with one click.
+The Chrome extension embeds the full PlexReader UI in the browser toolbar popup, and can detect RSS feeds on any page.
 
-### Installation (developer mode)
+> The extension only works in Chrome and Chromium-based browsers. For Firefox, Safari, or Edge, use the web app instead.
 
-The extension is not yet published to the Chrome Web Store. Install it manually:
+### Building and loading (developer mode)
 
-1. In Chrome, go to `chrome://extensions/`.
-2. Enable **Developer mode** (toggle in the top right).
-3. Click **Load unpacked**.
-4. Select the `ui/chrome_extension/` directory from the PlexReader repository.
+```bash
+# From the repo root — builds Flutter web and copies it into chrome_extension/
+make chrome-ext
+```
 
-### Configuration
+Then:
+1. Go to `chrome://extensions/`
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked** → select `ui/chrome_extension/`
 
-After installing:
+The PlexReader icon appears in the Chrome toolbar. Click it to open the full reader UI in a 400×600 px popup.
 
-1. Click the PlexReader icon in the toolbar.
-2. In the popup, enter your PlexReader server URL (e.g. `http://localhost:3000` or your public domain).
-3. If auth is enabled, enter your Bearer token.
-4. Click **Save**.
+### Using any browser (not just Chrome)
 
-### Usage
+The web app at **http://localhost:3000** (Docker) or **http://localhost:3001** (static build) works in any modern browser — Firefox, Safari, Edge, Brave. The Chrome extension is optional and only adds the one-click subscribe feature.
 
-Navigate to any website that publishes an RSS or Atom feed. Click the PlexReader toolbar icon — if the extension detects a feed on the page, a **Subscribe** button appears. Click it to add the feed to your PlexReader instance.
+### Subscribing to a feed from any page
 
-The extension uses the browser's `content_script.js` to detect `<link rel="alternate" type="application/rss+xml">` tags in the page source and passes the feed URL to `popup.js`, which calls the PlexReader API directly.
+When you visit a website that publishes an RSS or Atom feed, the extension's content script detects the `<link rel="alternate" type="application/rss+xml">` tag and surfaces a **Subscribe** button in the popup. Click it to add the feed directly to your PlexReader instance.

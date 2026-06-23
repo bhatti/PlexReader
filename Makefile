@@ -8,7 +8,7 @@
 
 .PHONY: help \
         backend-build backend-test backend-test-v backend-run tidy \
-        ui-deps ui-build ui-run ui-test ui-analyze \
+        ui-deps ui-build ui-run ui-test ui-analyze chrome-ext \
         dev dev-backend dev-ui \
         build test \
         docker-build docker-up docker-up-d docker-down docker-logs docker-ps \
@@ -82,6 +82,15 @@ ui-deps: ## Install Flutter dependencies
 ui-build: ui-deps ## Build Flutter web app for production
 	cd $(UI_DIR) && $(FLUTTER) build web --release \
 	  --dart-define=API_BASE_URL=
+
+chrome-ext: ui-build ## Build Flutter web and copy into chrome_extension/ for unpacked loading
+	cp -r $(UI_DIR)/build/web/. $(UI_DIR)/chrome_extension/
+	@echo ""
+	@echo "  Chrome extension ready: $(UI_DIR)/chrome_extension/"
+	@echo "  Load in Chrome:"
+	@echo "    1. Go to chrome://extensions/"
+	@echo "    2. Enable Developer mode"
+	@echo "    3. Click 'Load unpacked' → select ui/chrome_extension/"
 
 ui-run: ui-deps ## Run Flutter web in Chrome with hot reload (dev mode)
 	cd $(UI_DIR) && $(FLUTTER) run -d chrome \

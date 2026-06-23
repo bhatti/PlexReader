@@ -51,9 +51,11 @@ type Feed struct {
 	// last_error is populated when the last fetch failed. Output only.
 	LastError string `protobuf:"bytes,11,opt,name=last_error,json=lastError,proto3" json:"last_error,omitempty"`
 	// error_count is the number of consecutive fetch failures. Output only.
-	ErrorCount    int32                  `protobuf:"varint,12,opt,name=error_count,json=errorCount,proto3" json:"error_count,omitempty"`
-	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,13,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
-	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
+	ErrorCount int32 `protobuf:"varint,12,opt,name=error_count,json=errorCount,proto3" json:"error_count,omitempty"`
+	// is_favorite marks this feed as a favorite (shown in the Favorites section).
+	IsFavorite    bool                   `protobuf:"varint,15,opt,name=is_favorite,json=isFavorite,proto3" json:"is_favorite,omitempty"`
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	UpdateTime    *timestamppb.Timestamp `protobuf:"bytes,17,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -170,6 +172,13 @@ func (x *Feed) GetErrorCount() int32 {
 		return x.ErrorCount
 	}
 	return 0
+}
+
+func (x *Feed) GetIsFavorite() bool {
+	if x != nil {
+		return x.IsFavorite
+	}
+	return false
 }
 
 func (x *Feed) GetCreateTime() *timestamppb.Timestamp {
@@ -735,7 +744,7 @@ var File_plexreader_v1_feed_proto protoreflect.FileDescriptor
 
 const file_plexreader_v1_feed_proto_rawDesc = "" +
 	"\n" +
-	"\x18plexreader/v1/feed.proto\x12\rplexreader.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xd4\x04\n" +
+	"\x18plexreader/v1/feed.proto\x12\rplexreader.v1\x1a\x1cgoogle/api/annotations.proto\x1a\x1fgoogle/api/field_behavior.proto\x1a\x1bgoogle/protobuf/empty.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\x1a.protoc-gen-openapiv2/options/annotations.proto\"\xf5\x04\n" +
 	"\x04Feed\x12\x13\n" +
 	"\x02id\x18\x01 \x01(\tB\x03\xe0A\x03R\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12&\n" +
@@ -751,10 +760,12 @@ const file_plexreader_v1_feed_proto_rawDesc = "" +
 	"\n" +
 	"last_error\x18\v \x01(\tB\x03\xe0A\x03R\tlastError\x12$\n" +
 	"\verror_count\x18\f \x01(\x05B\x03\xe0A\x03R\n" +
-	"errorCount\x12@\n" +
-	"\vcreate_time\x18\r \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\n" +
+	"errorCount\x12\x1f\n" +
+	"\vis_favorite\x18\x0f \x01(\bR\n" +
+	"isFavorite\x12@\n" +
+	"\vcreate_time\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\n" +
 	"createTime\x12@\n" +
-	"\vupdate_time\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\n" +
+	"\vupdate_time\x18\x11 \x01(\v2\x1a.google.protobuf.TimestampB\x03\xe0A\x03R\n" +
 	"updateTime\"G\n" +
 	"\x11CreateFeedRequest\x122\n" +
 	"\x04feed\x18\x01 \x01(\v2\x13.plexreader.v1.FeedB\t\xe0A\x02\xbaH\x03\xc8\x01\x01R\x04feed\",\n" +

@@ -56,6 +56,10 @@ class _FeedScreenState extends ConsumerState<FeedScreen> {
           child: ArticleList(
             params: ArticleListParams(feedId: widget.feedId, unreadOnly: true),
             title: title,
+            unreadCount: feed?.unreadCount,
+            favoritesFeedId: widget.feedId,
+            isFavorite: feed?.isFavorite ?? false,
+            lastFetchedTime: feed?.lastFetchedTime,
           ),
         ),
       ],

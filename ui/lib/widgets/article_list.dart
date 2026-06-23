@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/article.dart';
 import '../models/preferences.dart';
 import '../providers/article_provider.dart';
+import '../providers/feed_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../theme/app_theme.dart';
 import 'article_card_magazine.dart';
@@ -18,13 +19,23 @@ import 'error_state.dart';
 class ArticleList extends ConsumerStatefulWidget {
   final ArticleListParams params;
   final String title;
+  final int? unreadCount;
   final VoidCallback? onMarkAllRead;
+  // feedId/folderId for the favorite toggle — null means no favorite button
+  final String? favoritesFeedId;
+  final bool isFavorite;
+  // null = feed has never been fetched (show spinner instead of "All caught up")
+  final String? lastFetchedTime;
 
   const ArticleList({
     super.key,
     required this.params,
     required this.title,
+    this.unreadCount,
     this.onMarkAllRead,
+    this.favoritesFeedId,
+    this.isFavorite = false,
+    this.lastFetchedTime,
   });
 
   @override
@@ -111,78 +122,163 @@ class _ArticleListState extends ConsumerState<ArticleList> {
 
   Widget _buildToolbar(BuildContext context, ViewMode viewMode,
       ArticleListState articleState, ArticleListNotifier notifier) {
+    final unread = widget.unreadCount;
     return Container(
       color: AppColors.surface,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      child: Row(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(
-            child: Text(
-              widget.title,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 4),
-          // Sort toggle
-          Tooltip(
-            message: notifier.sortOrder == SortOrder.newestFirst
-                ? 'Newest first'
-                : 'Oldest first',
-            child: IconButton(
-              icon: Icon(
-                notifier.sortOrder == SortOrder.newestFirst
-                    ? Icons.arrow_downward
-                    : Icons.arrow_upward,
-                size: 18,
-              ),
-              color: AppColors.textSecondary,
-              onPressed: () => notifier.toggleSortOrder(),
-            ),
-          ),
-          // Unread filter toggle — hidden on views with a fixed filter (Recently Read, Starred, Saved)
-          if (!notifier.hasFixedFilter)
-            Tooltip(
-              message: notifier.isUnreadOnly ? 'Showing unread' : 'Showing all',
-              child: IconButton(
-                icon: Icon(
-                  notifier.isUnreadOnly
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_unchecked,
-                  size: 18,
+          Row(
+            children: [
+              // Title + unread count (like Feedly)
+              Expanded(
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.3,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (unread != null && unread > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.unreadBadge,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          unread > 999 ? '999+' : '$unread',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                    // Favorite star — only for feed screens
+                    if (widget.favoritesFeedId != null) ...[
+                      const SizedBox(width: 6),
+                      Tooltip(
+                        message: widget.isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+                        child: InkWell(
+                          onTap: () {
+                            final feed = ref.read(feedProvider).valueOrNull
+                                ?.where((f) => f.id == widget.favoritesFeedId)
+                                .firstOrNull;
+                            if (feed != null) {
+                              ref.read(feedProvider.notifier).toggleFavorite(feed);
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(4),
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Icon(
+                              widget.isFavorite ? Icons.star : Icons.star_border,
+                              size: 20,
+                              color: widget.isFavorite ? AppColors.star : AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-                color: notifier.isUnreadOnly
-                    ? AppColors.primary
-                    : AppColors.textSecondary,
-                onPressed: () => notifier.toggleUnreadFilter(),
               ),
-            ),
-          // Mark all read — hidden on read-only views (Recently Read)
-          if (!widget.params.readOnly)
-            TextButton.icon(
-              icon: const Icon(Icons.done_all, size: 16),
-              label: const Text('Mark All'),
-              style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textSecondary),
-              onPressed: () => _confirmMarkAllRead(context, notifier),
-            ),
-          const SizedBox(width: 8),
-          // View mode toggles
-          _viewModeButton(
-              Icons.article_outlined, ViewMode.magazine, viewMode),
-          _viewModeButton(
-              Icons.format_list_bulleted, ViewMode.titleOnly, viewMode),
-          _viewModeButton(Icons.grid_view, ViewMode.cards, viewMode),
-          // Refresh
-          IconButton(
-            icon: const Icon(Icons.refresh, size: 18),
-            tooltip: 'Refresh',
-            color: AppColors.textSecondary,
-            onPressed: () => notifier.refresh(),
+              // Sort toggle
+              Tooltip(
+                message: notifier.sortOrder == SortOrder.newestFirst
+                    ? 'Newest first'
+                    : 'Oldest first',
+                child: IconButton(
+                  icon: Icon(
+                    notifier.sortOrder == SortOrder.newestFirst
+                        ? Icons.arrow_downward
+                        : Icons.arrow_upward,
+                    size: 18,
+                  ),
+                  color: AppColors.textSecondary,
+                  onPressed: () => notifier.toggleSortOrder(),
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                ),
+              ),
+              // Unread filter toggle
+              if (!notifier.hasFixedFilter)
+                Tooltip(
+                  message: notifier.isUnreadOnly ? 'Showing unread' : 'Showing all',
+                  child: IconButton(
+                    icon: Icon(
+                      notifier.isUnreadOnly
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      size: 18,
+                    ),
+                    color: notifier.isUnreadOnly
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                    onPressed: () => notifier.toggleUnreadFilter(),
+                    padding: EdgeInsets.zero,
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              // Mark all read — Feedly-style checkmark with count
+              if (!widget.params.readOnly) ...[
+                const SizedBox(width: 2),
+                Tooltip(
+                  message: 'Mark all as read',
+                  child: InkWell(
+                    onTap: () => _confirmMarkAllRead(context, notifier),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.divider),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.check, size: 14, color: AppColors.textSecondary),
+                          if (unread != null && unread > 0) ...[
+                            const SizedBox(width: 3),
+                            Text(
+                              unread > 999 ? '999+' : '$unread',
+                              style: const TextStyle(
+                                  color: AppColors.textSecondary, fontSize: 11),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+              const SizedBox(width: 2),
+              // View mode toggles
+              _viewModeButton(Icons.article_outlined, ViewMode.magazine, viewMode),
+              _viewModeButton(Icons.format_list_bulleted, ViewMode.titleOnly, viewMode),
+              _viewModeButton(Icons.grid_view, ViewMode.cards, viewMode),
+              // Refresh
+              IconButton(
+                icon: const Icon(Icons.refresh, size: 18),
+                tooltip: 'Refresh',
+                color: AppColors.textSecondary,
+                onPressed: () => notifier.refresh(),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
           ),
         ],
       ),
@@ -243,6 +339,24 @@ class _ArticleListState extends ConsumerState<ArticleList> {
     }
 
     if (state.articles.isEmpty) {
+      // Feed has never been fetched — initial background refresh still running.
+      final neverFetched = widget.params.feedId != null &&
+          (widget.lastFetchedTime == null || widget.lastFetchedTime!.isEmpty);
+      if (neverFetched) {
+        return const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(color: AppColors.primary),
+              SizedBox(height: 16),
+              Text(
+                'Fetching articles…',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              ),
+            ],
+          ),
+        );
+      }
       return const EmptyState(
         icon: Icons.inbox_outlined,
         title: 'All caught up!',
@@ -344,9 +458,7 @@ class _ArticleListState extends ConsumerState<ArticleList> {
       }
       return;
     }
-    if (!article.isRead) {
-      notifier.markAsRead(article.id);
-    }
+    // Do NOT auto-mark as read on select — user must explicitly use Mark Read.
     ref.read(selectedArticleIdProvider.notifier).state = article.id;
   }
 

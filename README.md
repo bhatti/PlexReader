@@ -3,7 +3,7 @@
 **Self-hosted RSS reader inspired by Feedly**
 
 [![License: LGPL-2.1](https://img.shields.io/badge/License-LGPL--2.1-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go)](https://go.dev)
+[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.44+-54C5F8?logo=flutter)](https://flutter.dev)
 
 PlexReader is a self-hosted, open-source RSS/Atom feed reader. It stores everything in a single SQLite file, exposes a Connect/gRPC+REST API, and ships a Flutter web frontend with Magazine, Title, and Cards views.
@@ -27,6 +27,9 @@ PlexReader is a self-hosted, open-source RSS/Atom feed reader. It stores everyth
 - **Optional auth** — Bearer token authentication (disabled by default)
 - **Swagger UI** — browse and try the REST API at `/swagger/`
 - **Dark theme** — Material 3 design with configurable preferences
+- **Favorites** — star any feed to pin it in a dedicated Favorites section in the sidebar
+- **Feedly-style toolbar** — feed title with unread count badge, mark-all checkmark button, per-view sort and filter
+- **Explicit mark-as-read** — selecting an article does not auto-mark it read; use the mark-read action or bulk mark-all
 
 ---
 
@@ -47,17 +50,52 @@ To stop: `make docker-down`
 
 ## Quick Start — Local Dev (no Docker)
 
-**Prerequisites:** Go 1.23+, CGO (Xcode CLT on macOS / `gcc` on Linux), Flutter 3.44+
+**Prerequisites:** Go 1.25+, CGO (Xcode CLT on macOS / `gcc` on Linux), Flutter 3.44+
 
 ```bash
 # Terminal 1 — backend on :8080
 make dev-backend
 
-# Terminal 2 — Flutter UI in Chrome on :3001
+# Terminal 2 — Flutter UI in Chrome on :3001 (dev mode)
 make dev-ui
+
+# To use any browser (Firefox, Safari, Edge): build then serve statically
+make ui-build
+cd ui/build/web && python3 -m http.server 3001
+# Open http://localhost:3001 in any browser
 ```
 
 Run `make dev` to print these instructions with URLs at any time.
+
+---
+
+## Running in Any Browser
+
+`make dev-ui` uses Flutter's hot-reload server which requires Chrome. The **built** web app is standard HTML/JS/CSS and works in any modern browser.
+
+### Option A — Docker (any browser, recommended)
+
+```bash
+make docker-up-d
+open http://localhost:3000   # Firefox, Safari, Edge — any browser works
+```
+
+### Option B — Build and serve statically (dev backend + any browser)
+
+```bash
+# Terminal 1 — backend
+make dev-backend
+
+# Terminal 2 — build Flutter web then serve it
+make ui-build
+cd ui/build/web && python3 -m http.server 3001
+```
+
+Open **http://localhost:3001** in any browser.
+
+### Chrome Extension
+
+See [Chrome Extension setup](#chrome-extension) below, or [docs/user-guide.md](docs/user-guide.md#chrome-extension) for full instructions.
 
 ---
 
@@ -95,6 +133,7 @@ make help        # print all targets
 | `make build` | Backend binary + Flutter web release bundle |
 | `make backend-build` | Go binary → `backend/bin/plexreader` |
 | `make ui-build` | Flutter web → `ui/build/web/` |
+| `make chrome-ext` | Build Flutter web + copy into `ui/chrome_extension/` for unpacked loading |
 
 ### Docker (production-like)
 
@@ -176,6 +215,27 @@ All configuration is via environment variables. See [docs/installation.md](docs/
 | `PLEXREADER_AUTH_ENABLED` | `false` | Require Bearer token on all requests |
 | `PLEXREADER_AUTH_TOKEN` | _(empty)_ | Token value (min 32 chars when auth enabled) |
 | `PLEXREADER_ALLOWED_ORIGINS` | `*` | Comma-separated CORS origins |
+
+---
+
+## Chrome Extension
+
+PlexReader ships a Manifest V3 Chrome extension that embeds the full Flutter web UI in the browser toolbar popup.
+
+### Build and load (unpacked)
+
+```bash
+make chrome-ext
+```
+
+Then in Chrome:
+1. Go to `chrome://extensions/`
+2. Enable **Developer mode** (top-right toggle)
+3. Click **Load unpacked** → select `ui/chrome_extension/`
+
+The extension opens the full reader UI in a popup (400×600 px). It also detects RSS/Atom `<link>` tags on any page so you can subscribe with one click.
+
+> The Chrome extension only works in Chrome/Chromium. For other browsers, use the web app at `http://localhost:3000`.
 
 ---
 

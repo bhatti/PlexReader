@@ -291,6 +291,13 @@ func TestArticleFTSSearch(t *testing.T) {
 	articleStore := storage.NewArticleStore(db)
 	ctx := context.Background()
 
+	// Skip when SQLite is built without FTS5 (common in dev environments).
+	var ftsCount int64
+	db.Raw("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='articles_fts'").Scan(&ftsCount)
+	if ftsCount == 0 {
+		t.Skip("FTS5 not available in this SQLite build")
+	}
+
 	feedID := ulid.Make().String()
 	feedStore.Create(ctx, &storage.Feed{ID: feedID, Title: "T", XMLURL: "http://t.example/rss"})
 	id1 := ulid.Make().String()

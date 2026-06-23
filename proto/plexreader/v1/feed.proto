@@ -52,8 +52,11 @@ message Feed {
   // error_count is the number of consecutive fetch failures. Output only.
   int32 error_count = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
 
-  google.protobuf.Timestamp create_time = 13 [(google.api.field_behavior) = OUTPUT_ONLY];
-  google.protobuf.Timestamp update_time = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+  // is_favorite marks this feed as a favorite (shown in the Favorites section).
+  bool is_favorite = 15;
+
+  google.protobuf.Timestamp create_time = 16 [(google.api.field_behavior) = OUTPUT_ONLY];
+  google.protobuf.Timestamp update_time = 17 [(google.api.field_behavior) = OUTPUT_ONLY];
 }
 
 message CreateFeedRequest {

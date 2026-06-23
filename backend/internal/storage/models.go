@@ -26,6 +26,7 @@ type Feed struct {
 	// BackoffUntil is set on transient errors (403, 429) to suppress retries
 	// until the backoff window expires.  NULL means no active backoff.
 	BackoffUntil *time.Time `gorm:"index"`
+	IsFavorite   bool      `gorm:"default:false"`
 	LastError    string
 	ErrorCount   int       `gorm:"default:0"`
 	CreatedAt    time.Time `gorm:"autoCreateTime"`

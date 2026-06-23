@@ -107,6 +107,8 @@ func (m *Feed) validate(all bool) error {
 
 	// no validation rules for ErrorCount
 
+	// no validation rules for IsFavorite
+
 	if all {
 		switch v := interface{}(m.GetCreateTime()).(type) {
 		case interface{ ValidateAll() error }:

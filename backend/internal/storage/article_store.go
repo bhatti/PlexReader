@@ -48,10 +48,19 @@ type ArticleStore interface {
 	DeleteExpired(ctx context.Context, retentionDays int) (int64, error)
 }
 
-type articleStore struct{ db *gorm.DB }
+type articleStore struct {
+	db           *gorm.DB
+	fts5Available bool
+}
 
 // NewArticleStore returns an ArticleStore backed by GORM.
-func NewArticleStore(db *gorm.DB) ArticleStore { return &articleStore{db: db} }
+// It probes for the articles_fts virtual table so full-text search degrades
+// gracefully on SQLite builds that lack the FTS5 module.
+func NewArticleStore(db *gorm.DB) ArticleStore {
+	var count int64
+	db.Raw("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='articles_fts'").Scan(&count)
+	return &articleStore{db: db, fts5Available: count > 0}
+}
 
 func (s *articleStore) Create(ctx context.Context, a *Article) (*Article, error) {
 	if err := s.db.WithContext(ctx).Create(a).Error; err != nil {
@@ -103,9 +112,9 @@ func (s *articleStore) List(ctx context.Context, opts ListArticlesOpts) ([]*Arti
 	pageSize := NormalizePageSize(opts.PageSize)
 	q := s.db.WithContext(ctx).Model(&Article{})
 
-	if opts.Query != "" {
+	if opts.Query != "" && s.fts5Available {
 		// Full-text search via FTS5. Quote tokens to prevent query injection.
-		q = q.Where("rowid IN (SELECT rowid FROM articles_fts WHERE articles_fts MATCH ?)", sanitizeFTSQuery(opts.Query))
+		q = q.Where("articles.rowid IN (SELECT rowid FROM articles_fts WHERE articles_fts MATCH ?)", sanitizeFTSQuery(opts.Query))
 	}
 	if opts.FeedID != "" {
 		q = q.Where("feed_id = ?", opts.FeedID)
@@ -137,15 +146,15 @@ func (s *articleStore) List(ctx context.Context, opts ListArticlesOpts) ([]*Arti
 		return nil, nil, fmt.Errorf("count articles: %w", err)
 	}
 
-	// Single conditional ORDER BY — must not append multiple Order() calls
-	// or GORM will stack them, producing broken SQL.
+	// Always qualify with table name to avoid "ambiguous column" when a JOIN
+	// (e.g. folder filter) is active.
 	var order string
 	if opts.ReadOnly {
-		order = "read_at desc, id desc"
+		order = "articles.read_at desc, articles.id desc"
 	} else if opts.SortNewest {
-		order = "published_at desc, id desc"
+		order = "articles.published_at desc, articles.id desc"
 	} else {
-		order = "published_at asc, id asc"
+		order = "articles.published_at asc, articles.id asc"
 	}
 
 	if opts.PageToken != "" {
@@ -160,7 +169,7 @@ func (s *articleStore) List(ctx context.Context, opts ListArticlesOpts) ([]*Arti
 		// COALESCE handles NULL published_at — treat as epoch so NULLs sort
 		// consistently and cursors across NULL boundaries work correctly.
 		q = q.Where(
-			fmt.Sprintf("(COALESCE(published_at, '1970-01-01T00:00:00Z'), id) %s (?, ?)", op),
+			fmt.Sprintf("(COALESCE(articles.published_at, '1970-01-01T00:00:00Z'), articles.id) %s (?, ?)", op),
 			c.SortValue, c.ID,
 		)
 	}

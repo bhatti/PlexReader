@@ -9,6 +9,7 @@ class Feed {
   final String? iconUrl;
   final int refreshIntervalSeconds;
   final int unreadCount;
+  final bool isFavorite;
   final String? lastFetchedTime;
   final String? lastError;
   final int errorCount;
@@ -23,6 +24,7 @@ class Feed {
     this.iconUrl,
     this.refreshIntervalSeconds = 3600,
     this.unreadCount = 0,
+    this.isFavorite = false,
     this.lastFetchedTime,
     this.lastError,
     this.errorCount = 0,
@@ -41,6 +43,7 @@ class Feed {
       iconUrl: json['iconUrl'] as String?,
       refreshIntervalSeconds: (json['refreshIntervalSeconds'] as num?)?.toInt() ?? 3600,
       unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
+      isFavorite: json['isFavorite'] as bool? ?? false,
       lastFetchedTime: json['lastFetchedTime'] as String?,
       lastError: json['lastError'] as String?,
       errorCount: (json['errorCount'] as num?)?.toInt() ?? 0,
@@ -56,34 +59,39 @@ class Feed {
     if (description != null) 'description': description,
     if (iconUrl != null) 'iconUrl': iconUrl,
     'refreshIntervalSeconds': refreshIntervalSeconds,
+    'isFavorite': isFavorite,
   };
+
+  static const _keep = Object();
 
   Feed copyWith({
     String? id,
     String? title,
     String? xmlUrl,
-    String? htmlUrl,
-    String? folderId,
-    String? description,
-    String? iconUrl,
+    Object? htmlUrl = _keep,
+    Object? folderId = _keep,
+    Object? description = _keep,
+    Object? iconUrl = _keep,
     int? refreshIntervalSeconds,
     int? unreadCount,
-    String? lastFetchedTime,
-    String? lastError,
+    bool? isFavorite,
+    Object? lastFetchedTime = _keep,
+    Object? lastError = _keep,
     int? errorCount,
   }) {
     return Feed(
       id: id ?? this.id,
       title: title ?? this.title,
       xmlUrl: xmlUrl ?? this.xmlUrl,
-      htmlUrl: htmlUrl ?? this.htmlUrl,
-      folderId: folderId ?? this.folderId,
-      description: description ?? this.description,
-      iconUrl: iconUrl ?? this.iconUrl,
+      htmlUrl: identical(htmlUrl, _keep) ? this.htmlUrl : htmlUrl as String?,
+      folderId: identical(folderId, _keep) ? this.folderId : folderId as String?,
+      description: identical(description, _keep) ? this.description : description as String?,
+      iconUrl: identical(iconUrl, _keep) ? this.iconUrl : iconUrl as String?,
       refreshIntervalSeconds: refreshIntervalSeconds ?? this.refreshIntervalSeconds,
       unreadCount: unreadCount ?? this.unreadCount,
-      lastFetchedTime: lastFetchedTime ?? this.lastFetchedTime,
-      lastError: lastError ?? this.lastError,
+      isFavorite: isFavorite ?? this.isFavorite,
+      lastFetchedTime: identical(lastFetchedTime, _keep) ? this.lastFetchedTime : lastFetchedTime as String?,
+      lastError: identical(lastError, _keep) ? this.lastError : lastError as String?,
       errorCount: errorCount ?? this.errorCount,
     );
   }

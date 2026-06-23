@@ -522,6 +522,10 @@
                   "description": "error_count is the number of consecutive fetch failures. Output only.",
                   "readOnly": true
                 },
+                "is_favorite": {
+                  "type": "boolean",
+                  "description": "is_favorite marks this feed as a favorite (shown in the Favorites section)."
+                },
                 "create_time": {
                   "type": "string",
                   "format": "date-time",
@@ -1175,6 +1179,10 @@
           "format": "int32",
           "description": "error_count is the number of consecutive fetch failures. Output only.",
           "readOnly": true
+        },
+        "is_favorite": {
+          "type": "boolean",
+          "description": "is_favorite marks this feed as a favorite (shown in the Favorites section)."
         },
         "create_time": {
           "type": "string",

@@ -32,6 +32,7 @@ func feedToProto(f *storage.Feed, unreadCount int32) *pb.Feed {
 		IconUrl:                f.IconURL,
 		RefreshIntervalSeconds: int32(f.RefreshIntervalSeconds),
 		UnreadCount:            unreadCount,
+		IsFavorite:             f.IsFavorite,
 		LastError:              f.LastError,
 		ErrorCount:             int32(f.ErrorCount),
 		CreateTime:             timestamppb.New(f.CreatedAt),

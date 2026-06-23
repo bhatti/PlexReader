@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/feed.dart';
 import '../services/feed_service.dart';
@@ -6,9 +7,30 @@ import 'api_client_provider.dart';
 
 class FeedNotifier extends StateNotifier<AsyncValue<List<Feed>>> {
   final FeedService _service;
+  Timer? _pollTimer;
 
   FeedNotifier(this._service) : super(const AsyncValue.loading()) {
     loadFeeds();
+    // Poll every 60 s so sidebar unread counts stay in sync with the backend
+    // scheduler without requiring a manual page refresh.
+    _pollTimer = Timer.periodic(const Duration(seconds: 60), (_) => _silentReload());
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
+  }
+
+  // Reload without flashing the loading state — keeps existing data visible.
+  Future<void> _silentReload() async {
+    if (!mounted) return;
+    try {
+      final feeds = await _service.listFeeds();
+      if (mounted) state = AsyncValue.data(feeds);
+    } catch (_) {
+      // Best-effort background poll — ignore errors, don't wipe existing state.
+    }
   }
 
   Future<void> loadFeeds() async {
@@ -53,6 +75,11 @@ class FeedNotifier extends StateNotifier<AsyncValue<List<Feed>>> {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<bool> toggleFavorite(Feed feed) async {
+    final updated = feed.copyWith(isFavorite: !feed.isFavorite);
+    return updateFeed(updated);
   }
 
   Future<bool> updateFeed(Feed feed) async {
