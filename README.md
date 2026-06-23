@@ -1,9 +1,7 @@
 # PlexReader
 
-**Self-hosted RSS reader inspired by Feedly**
-
-[![License: LGPL-2.1](https://img.shields.io/badge/License-LGPL--2.1-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/Go-1.25+-00ADD8?logo=go)](https://go.dev)
+[![License](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Go Version](https://img.shields.io/badge/Go-1.23+-00ADD8?logo=go)](https://go.dev)
 [![Flutter](https://img.shields.io/badge/Flutter-3.44+-54C5F8?logo=flutter)](https://flutter.dev)
 
 PlexReader is a self-hosted, open-source RSS/Atom feed reader. It stores everything in a single SQLite file, exposes a Connect/gRPC+REST API, and ships a Flutter web frontend with Magazine, Title, and Cards views.
@@ -250,6 +248,4 @@ The extension opens the full reader UI in a popup (400×600 px). It also detects
 
 ## License
 
-PlexReader is released under the **GNU Lesser General Public License v2.1 or later**. See [LICENSE](LICENSE).
-
-*Not affiliated with Feedly, Inc.*
+PlexReader is released under the [GNU AGPLv3 License](./LICENSE.md).
